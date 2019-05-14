@@ -41,7 +41,7 @@ Definiert den zweiten Bereich in dem ein/e KünstlerIn eventuell zusätzlich tä
 art3
 Definiert den dritten Bereich in dem ein/e KünstlerIn eventuell zusätzlich tätig ist. Bei Organisationen steht hier immer NA. 1 = MusikerIn, 2 = SchauspielerIn, 3 = SportlerIn, 4 = ModeratorIn, 5 = BloggerIn, 6 = Model, 7 = JournalistIn, 99 = NA
 
-natonalität
+nationalität
 Definiert die Nationalität des Künstlers / der Künstlerin. Bei Bands und Organisationen steht hier immer NA. 1 = Deutsch, 2 = Sonstiges, 99 = NA
 
 migration
