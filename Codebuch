@@ -21,7 +21,10 @@ id
 Gibt Kürzel der Namen der KünstlerInnen und der Organisationenen an 
 
 name
-Gibt die vollständigen Namen der KünstlerInnen und Organisationen an 
+Gibt die vollständigen Namen der KünstlerInnen und Organisationen mit Rechtsform an 
+
+display
+Gibt die Kurzform der Organisation ohne Rechtsform an, die im Netzwerk angezeigt werden soll 
 
 type
 Unterscheidung zwischen KünstlerIn und Organisation. 1 = Person, 2 = Organisation 
