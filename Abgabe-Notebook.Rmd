@@ -1,0 +1,425 @@
+---
+title: "R Notebook Laut gegen Nazis"
+output: html_notebook
+---
+
+Notebook des Projekts "Laut gegen Nazis"
+eingereicht von
+Nele Günther, Julia Bartsch, Birka Kallenbach, Luisa Bleich und Vanessa Hafner
+Hochschule der Medien, Stuttgart
+
+Leitfrage: 
+Inwieweit engagieren sich Künstler, die sich bei Laut gegen Nazis e.V. engagieren, auch anderweitig für soziale Organisationen? 
+Am Beispiel der zwei Kampagnen #unfollowme und Counter Speech Tour
+
+Zunächst wird das Gesamtnetzwerk erstellt (Unfollowme und Counterspeech). Dann werden die Projekte als einzelne Netzwerke erstellt und aus jedem Netzwerk wird noch einmal "Laut gegen Nazis" gelöscht, da alle Knoten sonst mit damit verbunden wären und wir die Beziehungen zwischen den Akteuren und Organisationen abgesehen von dieser Verbindung ermitteln wollen. 
+
+```{r}
+library("igraph")
+library("igraphdata")
+```
+
+
+```{r Netzwerk zusammen}
+zusnod <- read.csv("https://raw.githubusercontent.com/birx/Blockseminar/master/Gemeinsam%20-%20Nodelist-904.csv", header=T, as.is=T)
+
+zusedge <-  read.csv("https://raw.githubusercontent.com/birx/Blockseminar/master/GemeinsamEdges06.csv", header=T, as.is=T)
+
+zusmatrix <- as.matrix(zusedge)
+
+zusammen <- graph_from_data_frame(d=zusedge, vertices=zusnod, directed=F) # erstellt das Gesamtnetzwerk 
+
+zusammen # Abfragen was eingelesen wurde
+
+lgno <- delete_vertices(zusammen, V(zusammen)[name="Laut gegen Nazis"]) # Gesamtnetzwerk ohne Laut gegen Nazis
+
+
+
+u <- delete_vertices(zusammen, V(zusammen)[Projekt=="2"])  # Teilnetzwerk Unfollowme erstellen 
+plot(u,
+     layout=layout_with_kk,
+     sub="Teilnetzwerk Unfollowme")
+uo <- delete_vertices(u, V(u)[name == "Laut gegen Nazis"]) # Teilnetzwerk unfollowme ohne Laut gegen Nazis erstellen
+plot(uo,
+     layout=layout_with_kk,
+     sub="Unfollowme ohne Laut gegen Nazis")
+
+
+
+c <- delete_vertices(zusammen, V(zusammen)[Projekt=="1"]) # Teilnetzwerk Counterspeech erstellen 
+plot(c,
+     layout=layout_with_kk)
+co <- delete_vertices(c, V(c)[name == "Laut gegen Nazis"]) # Teilnetzwerk Counterspeech ohne Laut gegen Nazis erstellen
+plot(co, 
+     layout=layout_with_kk,
+     sub="Counterspeech ohne Laut gegen Nazis")
+
+# alle Netzwerke (ohne Laut gegen Nazis) in Two Mode darstellen
+V(lgno)[(V(lgno)$type=="2")]$shape <- "square" # Two Mode visualisierung f??r Netzwerk Zusammen ohne LGN
+V(lgno)[(V(lgno)$type=="1")]$shape <- "circle"
+
+V(uo)[(V(uo)$type=="2")]$shape <- "square" # Two Mode visualisierung f??r Netzwerk unfollowme ohne LGN
+V(uo)[(V(uo)$type=="1")]$shape <- "circle"
+
+V(co)[(V(co)$type=="2")]$shape <- "square" # Two Mode visualisierung f??r Netzwerk Counterspeech ohne LGN 
+V(co)[(V(co)$type=="1")]$shape <- "circle"
+
+V(lgno)$label <- V(lgno)$display # festlegen, dass bei allen Netzwerken immer "display" als Knotenlabel angezeigt wird statt "name"
+V(c)$label <- V(c)$display
+V(co)$label <- V(co)$display
+V(u)$label <- V(u)$display
+V(uo)$label <- V(uo)$display
+
+```
+
+
+0. Gesatmnetzwerk und Übersicht über die Projekte 
+```{r}
+
+V(zusammen)[(V(zusammen)$type=="2")]$color <- "#5EA754" # grün
+V(zusammen)[(V(zusammen)$type=="1")]$color <- "#7FA2F5" #blau
+
+plot(zusammen, layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     sub="Gesamtnetzwerk",
+      vertex.label.cex=.3 )
+
+
+V(lgno)[(V(lgno)$type=="2")]$color <- "#5EA754" # grün
+V(lgno)[(V(lgno)$type=="1")]$color <- "#7FA2F5" #blau
+
+plot(lgno, layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     sub="Gesamtnetzwerk ohen Laut gegen Nazis",
+      vertex.label.cex=.3 )
+
+V(zusammen)[(V(zusammen)$Projekt=="3")]$color <- "#5EA754" # grün 
+V(zusammen)[(V(zusammen)$Projekt=="1")]$color <- "#FF655D" #rot
+V(zusammen)[(V(zusammen)$Projekt=="2")]$color <- "#7FA2F5" #blau
+
+plot(zusammen, layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     sub="Visualisierung nach Projekten: Rot:Unfollowme, Blau: Counterspeech, Grün:Beides",
+      vertex.label.cex=.3 )
+```
+
+
+1.	Nationalität: Die Mehrheit der Künstler, die sich bei LGN engagieren, haben einen Migrationshintergrund.
+```{r}
+V(lgno)[(V(lgno)$migration=="1")]$color <- "#FF7F01" #orange
+V(lgno)[(V(lgno)$migration=="2")]$color <- "#5EA754" #grün
+V(lgno)[(V(lgno)$migration!="1" & migration != "2")]$color <- "#FFDA0D" #gelb
+migration<- delete_vertices(lgno, V(lgno)[migration =="99"]) # es werden knoten gel??scht, damit nur die ??brig bleiben, die K??nstler ??brig bleiben, die einen Migrationshintergrund haben f??r eine bessere ??bersicht. 
+plot(migration,
+     layout=layout.grid, 
+     vertex.size=6, 
+     vertex.label.dist=1, 
+     main="Migrationshintergrund",
+     sub="Kuenstler mit Migrationshintergrund in orange", #bands in gelb
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     vertex.label.cex=.6)
+
+V(lgno)[(V(lgno)$migration=="1")]$color <- "#D49E26" # zurücksetzen auf die default-Farbe von RStudio
+V(lgno)[(V(lgno)$migration!="1")]$color <- "#D49E26" 
+      
+```
+
+
+2. Es engagieren sich mehr Männer als Frauen bei Laut gegen Nazis
+```{r}
+sexy <- delete_vertices(lgno, V(lgno)[ type==2]) 
+V(sexy)[(V(sexy)$sex=="1")]$color <- "#7FA2F5"#blau
+V(sexy)[(V(sexy)$sex=="2")]$color <- "#FF655D" #rot
+V(sexy)[(V(sexy)$sex=="99")]$color <- "#FFDA0D" #gelb
+plot(sexy, layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", sub= "Maenner - blau, Frauen - rot und Bands - gelb")
+
+ecount(sexy)
+vcount(sexy)
+
+V(sexy)[(V(sexy)$sex=="1")]$color <- "#D49E26"# zurücksetzen auf die default-Farbe von RStudio
+V(sexy)[(V(sexy)$sex=="2")]$color <- "#D49E26" 
+V(sexy)[(V(sexy)$sex=="99")]$color <- "#D49E26" 
+```
+25 Maenner
+11 Frauen 
+5 Bands
+Werden die Bands nicht mitberuecksichtigt, machen die Maenner einen Anteil von  69,44 % aus. Die Frauen hingegen nur 30,56 %. 
+Unter Beruecksichtigung der Bands stellen die Maenner immer noch einen Anteil von 60,98 % dar, die Bands 12,19 % und die Frauen 26,83
+
+2.1 Männer engagieren sich auch mehr als Frauen
+```{r}
+maenner <- delete_vertices(lgno, V(lgno)[ sex==2])
+maenner1 <-delete_vertices(maenner, V(maenner)[sex==99 & type==1])
+plot (delete.vertices(simplify(maenner1), degree(maenner1)==0), 
+      vertex.label= NA, 
+      main="Maenner",
+      vertex.label = NA, 
+      main="Frauen",
+      vertex.size=7,
+      layout=layout_with_kk,
+      vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     vertex.label.cex=.6,
+    vertex.color="#7FA2F5") # isolierte werden gelöscht und die labels werden ausgeblendet
+
+
+frauen <- delete_vertices(lgno, V(lgno)[sex==1])
+frauen1 <-delete_vertices(frauen, V(frauen)[sex==99 & type==1])
+plot (delete.vertices(simplify(frauen1), degree(frauen1)==0), 
+      vertex.label = NA, 
+      main="Frauen",
+      vertex.size=7,
+      layout=layout_with_kk,
+      vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     vertex.label.cex=.6,
+     vertex.color="#FF655D") # isolierte werden gelöscht und die labels werden ausgeblendet
+
+
+  
+
+
+ecount(maenner1)
+ecount(frauen1)
+```
+Maenner 84 Kanten zu anderen Orgas
+Frauen 32 Kanten zu anderen Orgas
+63,63 % der Frauen engagieren sich neben Laut gegen Nazis fuer mindestens eine weiterer Organisation. 
+84 % der Maenner engagieren sich neben Laut gegen Nazis fuer mindestens eine weiterer Organisation. 
+Im Durchschnitt engagiert sich jede Frau fuer 2,91 Organisationen und jeder Mann fuer 3,36 Organisationen.
+
+
+3	Alter: Ältere Künstler engagieren sich häufiger als junge.
+```{r}
+jung <- delete_vertices(lgno, V(lgno)[alter<3 & type=="1"])  # alle personen mit alter über 3 löschen
+
+
+V(jung)[(V(jung)$type=="2")]$color <- "#5EA754" #grün
+V(jung)[(V(jung)$type=="1")]$color <- "#7FA2F5" #blau
+plot(delete.vertices(simplify(jung), degree(jung)==0), 
+     vertex.label=NA, 
+     sub= "Netzwerk Kuenstler bis 30",
+     layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA")
+
+
+
+alt <- delete_vertices (lgno, V(lgno)[alter>2 & type=="1"])
+
+V(alt)[(V(alt)$type=="2")]$color <- "#5EA754" #grün
+V(alt)[(V(alt)$type=="1")]$color <- "#7FA2F5" #blau
+plot(delete.vertices(simplify(alt), 
+                     degree(alt)==0), 
+                     vertex.label=NA, 
+                     sub= "Netzwerk Kuenstler 30+", 
+     layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA")  
+gsize(alt)
+
+ecount(lgno)
+```
+Es gibt 32 Kuenstler bei denen das Alter bekannt ist. Davon sind 8 Kuenstler alt und 24 Kuenstler jung.
+Insgesamt gibt es 8 Kanten von ??ltern Kuenstler zu Organisationen und 101 Kanten von j??ngeren Kuenstlern zu Organisationen. 
+Aeltere Kuenstler engagieren sich im Durchschnitt fuer 2,5 Organisationen
+Juengere Kuenstler engagieren sich im Durchschnitt fuer 4,21 Organisationen
+
+4	Follower: Bekannte Künstler engagieren sich häufiger als weniger bekannte.
+```{r}
+#nur Personen mit Follower unter 200.000 bleiben ??brig
+follow <- delete_vertices(lgno, V(lgno)[follower >6 & type=="1" ]) 
+
+
+V(follow)[(V(follow)$type=="2")]$color <- "#5EA754" # grün
+V(follow)[(V(follow)$type=="1")]$color <- "#7FA2F5" #blau
+plot(delete.vertices(simplify(follow), degree(follow)==0), 
+     vertex.label = NA, 
+     layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     sub="Nur Kuenstler mit weniger als 200 000 Followern")
+degree(follow)
+
+#nur Personen mit Follower ??ber 200.000 bleiben ??brig
+follow1 <-delete_vertices(lgno, V(lgno)[follower <7 & type=="1" ]) 
+follow2 <-delete_vertices(follow1, V(follow1)[follower ==99 & type=="1" ])
+
+V(follow2)[(V(follow2)$type=="2")]$color <- "#5EA754" # grün
+V(follow2)[(V(follow2)$type=="1")]$color <- "#7FA2F5" #blau
+plot(delete.vertices(simplify(follow2), degree(follow2)==0), 
+     layout=layout_nicely,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA",
+     sub="Nur Kuenstler mit mehr als 200 000 Followern") 
+```
+
+Follower unter 200.000 = 35 Kuenstler
+Follower ueber 200.000 = 4 Kuenstler 
+unter 200.000 gibt es 105 Verbindungen, ueber 200.000 13 Verbindungen
+Im Durchschnitt engagiert sich jeder unbekannterer Kuenstler fuer 3 Organisationen
+Jeder bekannte Kuenstler engagiert sich durchschnittlich fuer 3,25 Organisationen
+
+5	Engagement: Künstler, die sich bei LGN engagieren, engagieren sich hauptsächlich für Organisationen der Politik.
+
+```{r}
+V(lgno)[(V(lgno)$type=="1")]$color <- "grey" #dunkelrot
+V(lgno)[(V(lgno)$engagement=="1")]$color <- "#7B241C" #dunkelrot
+V(lgno)[(V(lgno)$engagement=="2")]$color <- "#E74C3C" # hellrot 
+V(lgno)[(V(lgno)$engagement=="3")]$color <- "#C39BD3" # helles lila
+V(lgno)[(V(lgno)$engagement=="4")]$color <- "#7D3C98" # dunkles lila
+V(lgno)[(V(lgno)$engagement=="5")]$color <- "#1A5276" # dunkles blau 
+V(lgno)[(V(lgno)$engagement=="6")]$color <- "#5DADE2" # helles blau 
+V(lgno)[(V(lgno)$engagement=="7")]$color <- "#145A32" # dunkles gr??n
+V(lgno)[(V(lgno)$engagement=="8")]$color <- "#58D68D" # helles gr??n 
+V(lgno)[(V(lgno)$engagement=="99" & type=="2")]$color <- "black"
+V(lgno)[(V(lgno)$engagement=="5" & engagement2=="8")]$color <- "#E67E22" # orange
+V(lgno)[(V(lgno)$engagement=="6" & engagement2=="8")]$color <- "#515A5A" # grau 
+V(lgno)[(V(lgno)$engagement=="8" & engagement2=="5")]$color <- "#E67E22"# orange
+V(lgno)[(V(lgno)$engagement=="2" & engagement2=="1")]$color <- "#F4D03F" # gelb
+
+plot(delete.vertices(simplify(lgno), degree(lgno)==0), 
+     layout=layout_nicely,
+     vertex.size=8, 
+     vertex.label=NA,
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+     sub= "Bildung dunkelrot, Kinder hellrot, Behinderung helles lila, Umwelt dunkles lila, Politik dunkles blau, Gesundheit helles blau, Sport dunkles Grün, Gesellschaft helles Grün, NA Schwarz, Gesellschaft und Politik Orange, Gesundheit und Gesellschaft grau, Kinder und Bildung Gelb")
+
+V(lgno)[(V(lgno)$type=="1")]$color <- "#D49E26" # zurücksetzen auf die default-Farbe von RStudio
+V(lgno)[(V(lgno)$type=="2")]$color <- "#D49E26" 
+```
+
+6	Engagement: Künstler mit Migrationshintergrund engagieren sich eher für politische Organisationen als Künstler ohne Migrationshintergrund.
+```{r}
+  V(lgno)[(V(lgno)$migration=="1")]$color <- "#FF655D" # rot für migration
+ V(lgno)[(V(lgno)$engagement=="5")]$color <- "#5EA754" # gruen für politik
+  V(lgno)[(V(lgno)$engagement2=="5")]$color <- "#5EA754"
+    V(lgno)[(V(lgno)$engagement3=="5")]$color <- "#5EA754"
+politik1<- delete_vertices(lgno, V(lgno)[engagement !="5" & type=="2" ]) # alles l??schen was sowohl nicht sich f??r politik engagiert ALS AUCH eine Organisation ist (alle Organisationen die sich nicht f??r politik engagieren)
+mm<- delete_vertices(politik1, V(politik1)[type=="1" & migration != "1"]) #Alle Personen mit NA (3) Migration l??schen 
+
+plot(mm, 
+     vertex.label=NA,
+     layout= layout_nicely, 
+     vertex.size=7,
+     vertex.frame.color="NA", 
+     sub="Kuenstler mit Migrationshintergrund, die sich politisch engagieren")
+
+degree(mm) # Anzahl der Verbindungen von Personen mit Migrationshintergrund zu politischen Organisationen
+gsize(mm)
+
+ V(lgno)[(V(lgno)$engagement=="5")]$color <- "#5EA754" #grün
+  V(lgno)[(V(lgno)$engagement2=="5")]$color <- "#5EA754"
+    V(lgno)[(V(lgno)$engagement3=="5")]$color <- "#5EA754"
+politik2<- delete_vertices(lgno, V(lgno)[engagement !="5" & type=="2" ]) # alles l??schen was sowohl nicht sich f??r politik engagiert ALS AUCH eine Organisation ist (alle Organisationen die sich nicht f??r politik engagieren)
+omigration <- delete_vertices(politik2, V(politik2)[migration=="1"])
+plot(omigration, 
+     vertex.label=NA,
+     layout= layout_nicely, 
+     vertex.size=7,
+     vertex.frame.color="NA", 
+     sub="Kuenstler ohne Migrationshintergrund, die sich politisch engagieren")
+degree(omigration) 
+gsize(omigration) # z??hlt die Verbindungen
+
+#Gegen??berstellung beide Netzwerke
+par(mfrow=c(2,2), mar=c(0,0,2,2)) # definiert, dass 3 Abbildungen in einer Zeile stehen
+plot(omigration, 
+     sub = "Kuenstler ohne Migrationshintergrund, die sich fuer politische Organisationen engagieren")
+plot(mm,
+     sub= "Kuenstler mit Migrationshintergrund, die sich fuer politische Organisationen engagieren")
+
+gsize(omigration)
+gsize(mm)
+edge_density(mm)
+edge_density(omigration)
+
+V(lgno)[(V(lgno)$type=="1")]$color <- "#D49E26" # zurücksetzen auf die default-Farbe von RStudio
+V(lgno)[(V(lgno)$type=="2")]$color <- "#D49E26" 
+
+```
+
+7	Engagement: Künstler mit dem gleichen Management engagieren sich für die gleichen Organisationen.
+```{r}
+# Nur Management Fourmusic 
+egoOlli <- make_ego_graph(lgno, order=1, c("Oliver Harris"))
+egoIlira<- make_ego_graph(lgno, order=1, c("ILIRA"))
+Fourmusic<- egoOlli[[1]] + egoIlira[[1]]
+
+V(Fourmusic)[(V(Fourmusic)$type=="2")]$color <- "#5EA754" # grün
+V(Fourmusic)[(V(Fourmusic)$type=="1")]$color <- "#7FA2F5" #blau
+plot(Fourmusic, sub=" Nur Kuenstler, die das Management Fourmusic haben",
+  layout=layout_nicely,
+     vertex.size=8, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+  vertex.color="#9ACD32", 
+  vertex.label.cex=.8)
+
+
+#nur Management Sony 
+vertex.attributes(lgno)$Management
+
+sony <- delete_vertices(lgno, V(lgno)[Management!="1" & type=="1"]) 
+degree(sony)
+V(sony)$label <- V(sony)$display
+V(sony)[(V(sony)$type=="2")]$color <- "#5EA754" # grün
+V(sony)[(V(sony)$type=="1")]$color <- "#7FA2F5" #blau
+plot(delete.vertices(simplify(sony), degree(sony)==0), 
+     layout=layout_with_kk,
+     vertex.size=7, 
+     vertex.label.family="Helvetica",
+     vertex.label.color="black",
+     vertex.frame.color="NA", 
+      vertex.label.cex=.5 ,
+     sub=" Nur Kuenstler, die das Management Sony haben")
+```
+
+8	Engagement: Künstler von #unfollowme engagieren sich mehr für politische Organisationen als Künstler von Counter Speech.
+```{r}
+#nur politisches Engagement unfollowme 
+pu<- delete_vertices(uo, V(uo)[engagement !="5" & type =="2" ])
+plot (pu)
+ecount(pu)
+edge_density(pu)
+#nur politisches Engagement counterspeech
+pc<- delete_vertices(co, V(co)[engagement !="5" & type =="2" ])
+plot (pc)
+ecount(pc)
+edge_density(pc)
+```
+14 Kuenstler bei Couter Speech
+28  Kuenstler bei Unfollowme
+35,71 % der Kuenstler von CS engagieren sich bei politischen Organisationen
+21, 43 % der Kuenstler bei UM engagieren sich fuer politische Organisationen
+6,69  % der moeglichen Verbindungen zu den vorhanden politischen Organisationen im Gesamtnetzwerk werden erfuellt bei Counter Speech
+Waehrend bei Unfollowme nur 1,56 % umgesetzt werden
